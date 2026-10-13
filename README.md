@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://gerardobr01.github.io/Grind001/"><img src="https://img.shields.io/badge/ABRIR_LA_APP-en_vivo-D9822B?style=for-the-badge&logoColor=white" alt="Abrir la app"></a>
-  <a href="apk/Serie.apk"><img src="https://img.shields.io/badge/DESCARGAR-APK_Android-3FAE6A?style=for-the-badge" alt="Descargar APK"></a>
+  <a href="https://github.com/GERARDOBR01/Grind001/releases/latest/download/Serie.apk"><img src="https://img.shields.io/badge/DESCARGAR-APK_Android-3FAE6A?style=for-the-badge" alt="Descargar APK"></a>
   <img src="https://img.shields.io/badge/sin_backend-sin_cuenta-7C8896?style=for-the-badge" alt="Sin backend ni cuenta">
   <img src="https://img.shields.io/badge/datos-en_el_teléfono-3FAE6A?style=for-the-badge" alt="Datos en el teléfono">
 </p>
@@ -18,7 +18,7 @@ inicio; funciona sin internet.
 
 | | |
 |---|---|
-| **Android (APK)** | Descarga [`apk/Serie.apk`](apk/Serie.apk) en el teléfono, ábrelo y permite «instalar apps de origen desconocido» cuando lo pida. Cada push a `main` compila uno nuevo en *Releases* (GitHub Actions). |
+| **Android (APK)** | Descarga [la última versión](https://github.com/GERARDOBR01/Grind001/releases/latest/download/Serie.apk) en el teléfono, ábrela y permite «instalar apps de origen desconocido» cuando lo pida. Cada push a `main` compila el APK, lo prueba en un emulador Android y lo publica en *Releases*. |
 | **Web** | Abre el link de la app y en el menú del navegador elige «Agregar a pantalla de inicio». |
 
 <p align="center">
@@ -93,19 +93,38 @@ reproduce el *comportamiento* con una implementación propia.
 
 ## Qué se toca al mantenerlo
 
+| Archivo | Qué hay |
+|---|---|
+| `index.html` | Solo el esqueleto de la página y el orden de carga de los scripts. |
+| `css/app.css` | Todos los estilos. |
+| `js/core.js` | Núcleo: estado, formato, navegación, render, gráficas, hojas, sonido, respaldo, `A` y `HOOKS`. |
+| `js/gym.js` | Gym: catálogo, series, récords, rutinas, entreno en curso, perfil y ajustes. |
+| `js/foods.js` · `js/nutri.js` | Comida. |
+| `js/poses.js` · `js/movil.js` | Movilidad. |
+| `js/boot.js` | Arranque, después de cargar todos los módulos. |
+
 | Símbolo | Qué controla |
 |---|---|
 | `LIB` | Catálogo de ejercicios: `[id, nombre, músculo, secundarios, equipo, tipo]`. |
 | `MUSCLE` / `EQUIP` / `TYPE` | Etiquetas en español de músculos, equipo y tipos de ejercicio. |
 | `MET` / `metsFor` | Qué cuenta como récord para cada tipo de ejercicio. |
 | `VIEWS` | Una función por pantalla: `home`, `train`, `workout`, `routine`, `finish`, `wv`, `lib`, `ex`, `me`, `cfg`. |
-| `A` | Todas las acciones; cada botón dice cuál usa con `data-a`. |
+| `A` | Todas las acciones; cada botón dice cuál usa con `data-a`. Cada módulo agrega las suyas con `Object.assign(A, …)`. |
 | `seed()` | Los datos de ejemplo de la primera vez. |
-| `BLANKS` / `SEEDS` / `TABS` | Cómo cada módulo agrega su estado, sus datos de ejemplo y su pestaña. |
+| `BLANKS` / `SEEDS` / `TABS` / `HOOKS` | Cómo cada módulo agrega su estado, sus datos de ejemplo, su pestaña y sus ganchos (`reset`, `render`, `tick`, `boot`). |
 | `js/foods.js` | Base de alimentos `[id, nombre, kcal, P, C, G, porción_g, porción, categoría]`. |
 | `js/nutri.js` · `NUT` | Tendencia de peso, gasto adaptativo y metas. |
 | `js/poses.js` | Posturas: zonas, segundos, instrucciones y figura (coordenadas de articulaciones). |
 | `js/movil.js` · `ROUTINES`, `MT` | Rutinas; detección, medidas y puntaje del test de movilidad. |
+
+## Pruebas
+
+`npm install && npx playwright install chromium && npm test` corre 17 pruebas en un navegador con
+pantalla de teléfono: pestañas, entreno completo y botón atrás, fórmulas del gym, registro de
+comida, plan y check-in, gasto adaptativo con datos simulados, rutina guiada, rutina propia, test de
+movilidad con poses sintéticas, carga del detector de pose con cámara falsa, respaldo, borrar,
+restaurar y persistencia. Cualquier error de JavaScript hace fallar la prueba. GitHub Actions las
+corre en cada push y pull request (`.github/workflows/test.yml`).
 
 ## Publicar
 

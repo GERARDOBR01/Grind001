@@ -1,8 +1,8 @@
 /* Service worker: la app funciona sin internet.
    Archivos de la app: primero la red (para recibir actualizaciones), si falla, la copia guardada.
    Detector de pose (vendor/): primero la copia guardada (pesa ~15 MB y no cambia). */
-const V = 'serie-v2';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './js/foods.js', './js/nutri.js', './js/poses.js', './js/movil.js',
+const V = 'serie-v3';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './css/app.css', './js/core.js', './js/gym.js', './js/foods.js', './js/nutri.js', './js/poses.js', './js/movil.js', './js/boot.js',
   './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
