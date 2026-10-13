@@ -1,71 +1,76 @@
-<img src="assets/banner.svg" alt="Constancia — deja constancia del estado de cada bulto antes de subirlo al camión" width="100%">
+<img src="assets/banner.svg" alt="Serie — registro de entreno: rutinas, series, descansos, récords y progreso" width="100%">
 
 <p align="center">
-  <a href="https://gerardobr01.github.io/MUDANZAS-FLASH-/"><img src="https://img.shields.io/badge/ABRIR_EL_DEMO-en_vivo-30A46C?style=for-the-badge&logoColor=white" alt="Abrir el demo"></a>
+  <a href="https://gerardobr01.github.io/MUDANZAS-FLASH-/"><img src="https://img.shields.io/badge/ABRIR_LA_APP-en_vivo-D9822B?style=for-the-badge&logoColor=white" alt="Abrir la app"></a>
   <img src="https://img.shields.io/badge/HTML-un_solo_archivo-1F2328?style=for-the-badge" alt="Un solo archivo">
   <img src="https://img.shields.io/badge/sin_build-sin_backend-7C8896?style=for-the-badge" alt="Sin build ni backend">
-  <img src="https://img.shields.io/badge/marca-neutra-F5A524?style=for-the-badge" alt="Marca neutra">
+  <img src="https://img.shields.io/badge/datos-en_el_teléfono-3FAE6A?style=for-the-badge" alt="Datos en el teléfono">
 </p>
 
-**Cuando algo se raya, gana quien tiene el registro.**
+**Lo que no se anota, no se supera.**
 
-Maqueta de venta para una empresa de mudanzas. Un solo archivo, `index.html`, sin build,
-sin backend, sin dependencias. Se abre desde un link en el celular y carga al instante —
-que es exactamente como se enseña en la banqueta, antes de que arranque el camión.
+Registro de entrenamiento de gimnasio inspirado en el flujo de las apps tipo *gym log*
+(Hevy, Strong). Un solo archivo, `index.html`, sin build, sin backend, sin dependencias. Se abre
+desde un link en el celular, se agrega a la pantalla de inicio y funciona sin internet.
 
 <p align="center">
-  <img src="assets/acta-cerrada.png" alt="Acta de carga cerrada: 11 bultos, uno con daño previo registrado, cada uno con su sello de hora" width="380">
+  <img src="assets/inicio.png" alt="Inicio: racha semanal y lista de entrenos" width="250">
+  <img src="assets/entreno.png" alt="Entreno en curso: series con anterior, peso, reps, check y temporizador de descanso" width="250">
+  <img src="assets/ejercicio.png" alt="Ejercicio: gráfica de peso máximo y récords personales" width="250">
 </p>
 
 ---
 
-## Los dos flujos
+## Qué hace
 
 | | |
 |---|---|
-| **Acta de carga** | Deja constancia del estado de cada bulto **antes** de subirlo, con nota y sello de hora. Es el flujo principal: sin acta, cualquier reclamo posterior es palabra contra palabra. |
-| **Cotización** | Levanta el inventario con foto, volumen y notas de acceso. No calcula ni muestra precio — el campo *"Su cotización"* va en blanco a propósito. |
+| **Entreno en curso** | Cronómetro, volumen y series en vivo. Tabla por ejercicio: *Serie · Anterior · Peso · Reps · ✓*. Si dejas un campo vacío y marcas la serie, toma el objetivo de la rutina o lo de la vez pasada. |
+| **Tipos de serie** | Calentamiento (C), normal (1, 2, 3…), al fallo (F) y drop set (D). Los calentamientos no cuentan en la numeración ni en la distribución muscular. |
+| **Descanso automático** | Al marcar una serie arranca el temporizador del ejercicio: −15 / +15 / saltar, con sonido y vibración al terminar. |
+| **Récords en vivo** | Peso máximo, 1RM estimado (Epley) y mejor serie. Avisa en el momento en que los rompes; la primera vez que haces un ejercicio no cuenta como récord. |
+| **Rutinas** | Crear, editar, duplicar, eliminar. Las series de la rutina se vuelven el objetivo (texto gris) al empezarla. Cualquier entreno se puede repetir o guardar como rutina. |
+| **Biblioteca** | 66 ejercicios en español con músculo principal, secundarios y equipo; búsqueda sin acentos, filtro por músculo, “más usados” y ejercicios personalizados. |
+| **Herramientas** | Calentamiento automático (40/60/80 % × 10/5/3), calculadora de discos, superseries, notas por ejercicio, tabla de repeticiones máximas. |
+| **Progreso** | Gráfica de 12 semanas (duración, volumen o series), calendario, series por músculo en 30 días, racha semanal, peso corporal. |
+| **Datos** | kg o lb, respaldo JSON (exportar/importar), exportación de series en CSV. |
 
-Cada flujo tiene **un ejemplo terminado** (se ve completo) y **un flujo de armado** que se
-detiene en el corte. La diferencia entre los dos es el argumento de venta.
+Los tipos de ejercicio cubren peso y reps, peso corporal con lastre, solo reps, duración y
+distancia con tiempo, así que también entran plancha, cinta y bici.
 
-## El sello de hora es el punto
+## Cómo se armó
 
-Los documentos ya terminados llevan fecha congelada: son registros de una mudanza que ya
-pasó, así que no se mueven nunca. Lo que el usuario arma en el momento se sella con el
-**reloj real del teléfono**, corriendo segundo a segundo.
-
-La razón es la que hace creíble a todo el resto: un "sello activo" que no coincide con el
-reloj del propio celular no prueba nada.
+El análisis está en [`docs/ANALISIS.md`](docs/ANALISIS.md): qué se tomó como referencia, qué se
+pudo y qué no se pudo inspeccionar, y cómo el modelo de datos de la app se alinea con la API
+pública de referencia. **No se copió código, textos, imágenes ni marca de ninguna app**: se
+reproduce el *comportamiento* con una implementación propia.
 
 ## Reglas que el archivo respeta
 
-- **Marca neutra.** No aparece el nombre ni el logo de ningún cliente real.
-- **Ningún precio en pesos**, en ningún lado.
-- El corte cierra con mensaje y firma. Sin botón, sin link, sin llamada a la acción.
-- Recargar deja todo limpio: no hay persistencia.
-- **Cero llamadas de red.** Funciona sin internet una vez cargado.
+- **Marca propia.** La app se llama *Serie*; no usa nombre, logo ni recursos de terceros.
+- **Cero llamadas de red.** Ni fuentes, ni analítica, ni CDN.
+- **Los datos son del usuario.** Todo vive en `localStorage` del navegador; respaldo con un toque.
+- **Primera vez con ejemplo.** Al abrir por primera vez se cargan 8 semanas de una rutina
+  Empuje / Jalón / Pierna para que las gráficas tengan algo que mostrar. *Ajustes → Borrar todo*
+  deja la app en blanco.
 
 ## Qué se toca al mantenerlo
 
 | Símbolo | Qué controla |
 |---|---|
-| `DEMO_NOW` | Fecha y hora congeladas de los documentos ya terminados. |
-| `ITEMS` | Catálogo de 15 piezas: nombre, volumen, dibujo y `mark` (dónde cae la marca de daño). |
-| `ACTA` / `COT` | Datos semilla de los dos ejemplos terminados, escritos a mano. |
-| `CUT` | Pasos de la transición del corte. El texto del mensaje y la firma están en `#cut-msg`, literales. |
-
-Las 15 piezas son ilustraciones vectoriales dibujadas en el mismo encuadre y con la misma
-luz, embebidas en el archivo. Sustituirlas por fotografías reales es un cambio local: cada
-entrada de `ITEMS` toma su dibujo de `G`, y el envoltorio `shot()` ya aplica el encuadre y
-el recorte de miniatura.
+| `LIB` | Catálogo de ejercicios: `[id, nombre, músculo, secundarios, equipo, tipo]`. |
+| `MUSCLE` / `EQUIP` / `TYPE` | Etiquetas en español de músculos, equipo y tipos de ejercicio. |
+| `MET` / `metsFor` | Qué cuenta como récord para cada tipo de ejercicio. |
+| `VIEWS` | Una función por pantalla: `home`, `train`, `workout`, `routine`, `finish`, `wv`, `lib`, `ex`, `me`, `cfg`. |
+| `A` | Todas las acciones; cada botón dice cuál usa con `data-a`. |
+| `seed()` | Los datos de ejemplo de la primera vez. |
 
 ## Publicar
 
-GitHub Pages sirviendo la raíz de la rama. `index.html` está en la raíz, así que no hace
-falta configuración adicional.
+GitHub Pages sirviendo la raíz de la rama. `index.html` está en la raíz, así que no hace falta
+configuración adicional.
 
 ---
 
-*Demo de trabajo. Los datos que se ven — folios, nombres, domicilios, fechas — son de
-muestra. Ningún cliente real aparece en este repositorio.*
+*La versión anterior de este repositorio (la maqueta “Constancia” para mudanzas) sigue en el
+historial de git, en el commit `7b27b42`.*
