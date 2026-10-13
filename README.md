@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://gerardobr01.github.io/Grind001/"><img src="https://img.shields.io/badge/ABRIR_LA_APP-en_vivo-D9822B?style=for-the-badge&logoColor=white" alt="Abrir la app"></a>
-  <a href="apk/Serie.apk"><img src="https://img.shields.io/badge/DESCARGAR-APK_Android-3FAE6A?style=for-the-badge" alt="Descargar APK"></a>
+  <a href="https://github.com/GERARDOBR01/Grind001/releases/latest/download/Serie.apk"><img src="https://img.shields.io/badge/DESCARGAR-APK_Android-3FAE6A?style=for-the-badge" alt="Descargar APK"></a>
   <img src="https://img.shields.io/badge/sin_backend-sin_cuenta-7C8896?style=for-the-badge" alt="Sin backend ni cuenta">
   <img src="https://img.shields.io/badge/datos-en_el_teléfono-3FAE6A?style=for-the-badge" alt="Datos en el teléfono">
 </p>
@@ -18,7 +18,7 @@ inicio; funciona sin internet.
 
 | | |
 |---|---|
-| **Android (APK)** | Descarga [`apk/Serie.apk`](apk/Serie.apk) en el teléfono, ábrelo y permite «instalar apps de origen desconocido» cuando lo pida. Cada push a `main` compila uno nuevo en *Releases* (GitHub Actions). |
+| **Android (APK)** | Descarga [la última versión](https://github.com/GERARDOBR01/Grind001/releases/latest/download/Serie.apk) en el teléfono, ábrela y permite «instalar apps de origen desconocido» cuando lo pida. Cada push a `main` compila el APK, lo prueba en un emulador Android y lo publica en *Releases*. |
 | **Web** | Abre el link de la app y en el menú del navegador elige «Agregar a pantalla de inicio». |
 
 <p align="center">
