@@ -3,5 +3,5 @@ import { cpSync, rmSync, mkdirSync } from 'node:fs';
 const out = 'www';
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out);
-for (const f of ['index.html', 'manifest.webmanifest', 'js', 'icons', 'vendor']) cpSync(f, `${out}/${f}`, { recursive: true });
+for (const f of ['index.html', 'manifest.webmanifest', 'css', 'js', 'icons', 'vendor']) cpSync(f, `${out}/${f}`, { recursive: true });
 console.log('www/ listo');

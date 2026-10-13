@@ -93,15 +93,25 @@ reproduce el *comportamiento* con una implementación propia.
 
 ## Qué se toca al mantenerlo
 
+| Archivo | Qué hay |
+|---|---|
+| `index.html` | Solo el esqueleto de la página y el orden de carga de los scripts. |
+| `css/app.css` | Todos los estilos. |
+| `js/core.js` | Núcleo: estado, formato, navegación, render, gráficas, hojas, sonido, respaldo, `A` y `HOOKS`. |
+| `js/gym.js` | Gym: catálogo, series, récords, rutinas, entreno en curso, perfil y ajustes. |
+| `js/foods.js` · `js/nutri.js` | Comida. |
+| `js/poses.js` · `js/movil.js` | Movilidad. |
+| `js/boot.js` | Arranque, después de cargar todos los módulos. |
+
 | Símbolo | Qué controla |
 |---|---|
 | `LIB` | Catálogo de ejercicios: `[id, nombre, músculo, secundarios, equipo, tipo]`. |
 | `MUSCLE` / `EQUIP` / `TYPE` | Etiquetas en español de músculos, equipo y tipos de ejercicio. |
 | `MET` / `metsFor` | Qué cuenta como récord para cada tipo de ejercicio. |
 | `VIEWS` | Una función por pantalla: `home`, `train`, `workout`, `routine`, `finish`, `wv`, `lib`, `ex`, `me`, `cfg`. |
-| `A` | Todas las acciones; cada botón dice cuál usa con `data-a`. |
+| `A` | Todas las acciones; cada botón dice cuál usa con `data-a`. Cada módulo agrega las suyas con `Object.assign(A, …)`. |
 | `seed()` | Los datos de ejemplo de la primera vez. |
-| `BLANKS` / `SEEDS` / `TABS` | Cómo cada módulo agrega su estado, sus datos de ejemplo y su pestaña. |
+| `BLANKS` / `SEEDS` / `TABS` / `HOOKS` | Cómo cada módulo agrega su estado, sus datos de ejemplo, su pestaña y sus ganchos (`reset`, `render`, `tick`, `boot`). |
 | `js/foods.js` | Base de alimentos `[id, nombre, kcal, P, C, G, porción_g, porción, categoría]`. |
 | `js/nutri.js` · `NUT` | Tendencia de peso, gasto adaptativo y metas. |
 | `js/poses.js` | Posturas: zonas, segundos, instrucciones y figura (coordenadas de articulaciones). |
