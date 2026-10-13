@@ -1,7 +1,7 @@
 <img src="assets/banner.svg" alt="Serie — registro de entreno: rutinas, series, descansos, récords y progreso" width="100%">
 
 <p align="center">
-  <a href="https://gerardobr01.github.io/MUDANZAS-FLASH-/"><img src="https://img.shields.io/badge/ABRIR_LA_APP-en_vivo-D9822B?style=for-the-badge&logoColor=white" alt="Abrir la app"></a>
+  <a href="https://gerardobr01.github.io/Grind001/"><img src="https://img.shields.io/badge/ABRIR_LA_APP-en_vivo-D9822B?style=for-the-badge&logoColor=white" alt="Abrir la app"></a>
   <img src="https://img.shields.io/badge/HTML-un_solo_archivo-1F2328?style=for-the-badge" alt="Un solo archivo">
   <img src="https://img.shields.io/badge/sin_build-sin_backend-7C8896?style=for-the-badge" alt="Sin build ni backend">
   <img src="https://img.shields.io/badge/datos-en_el_teléfono-3FAE6A?style=for-the-badge" alt="Datos en el teléfono">
