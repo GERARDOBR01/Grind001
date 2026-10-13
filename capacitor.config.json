@@ -5,5 +5,10 @@
   "android": {
     "backgroundColor": "#0e0f12"
   },
-  "loggingBehavior": "production"
+  "loggingBehavior": "production",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native"
+    }
+  }
 }
