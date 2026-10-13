@@ -130,3 +130,97 @@ progreso, medidas en cm, reordenar arrastrando. (RPE, rangos de reps y reemplaza
 | **Series por músculo** | Principal = 1, secundario = 0.5 | Igual | Sin cambio |
 | **Nivel de fuerza** | Percentil ≥ 90 élite, ≥ 70 avanzado, ≥ 40 intermedio | — | No aplica: requiere datos de otros usuarios |
 | **Calculadora de discos** | Los discos disponibles vienen del servidor | Lista fija | Sin cambio |
+
+---
+
+# Parte 2: nutrición (tipo MacroFactor) y movilidad (tipo Pliability)
+
+Los dos APK llegaron en `Internal storage.zip` (Drive). Mismo criterio que con la app de gym:
+**se documenta el comportamiento y se reimplementa; no se copia código, textos, imágenes, videos,
+bases de datos ni marca.**
+
+## 5. Herramientas
+
+| Paso | Herramienta | Resultado |
+|---|---|---|
+| Manifiesto de cada APK | `rea inspect-android-package` (REA 6.4.0 + `jadx-headless-mcp` 0.7.1, SHA-256 `6e5eacf5…ff75` verificado contra el que REA audita) | OK en ambos |
+| Inventario de clases | `rea search-android-classes` | Falla en Pliability: *“JADX class inventory is duplicated”* (clases repetidas entre `classes*.dex`). REA se niega a dar un inventario que no cuadra. |
+| Decompilado | JADX 1.5.3 directo (el mismo motor) | 24,176 clases; la lógica de la app (`com.romwod.*`, `com.business.*`, `com.common.*`) es legible |
+
+| Campo | MacroFactor | Pliability |
+|---|---|---|
+| `package_name` | `com.sbs.diet` | `com.romwodllc.android` |
+| Versión | 5.8.9 (879) | 4.18.0 (357) |
+| SDK mín. / objetivo | 32 / 36 | 25 / 36 |
+| Tecnología | **Flutter** (Dart compilado AOT) | **Kotlin + Jetpack Compose**, MediaPipe Pose Landmarker |
+
+## 6. MacroFactor: qué se pudo y qué no
+
+El archivo es solo el **APK base** de un *split APK*: el manifiesto declara
+`requiredSplitTypes="base__abi"` y no hay ningún `lib/*.so`. La lógica de Flutter vive en
+`libapp.so`, que viene en el split `split_config.arm64_v8a.apk`, **que no estaba en el zip**. Sin ese
+archivo no hay código Dart que leer. (Para la próxima: exportar la app con *SAI* o *APK Extractor*
+como `.apks`/`.xapk`, que incluye todos los splits).
+
+Lo que sí trae el APK base: los recursos de Flutter (`assets/flutter_assets`): ilustraciones de
+alimentos, un catálogo de ejercicios propio, siluetas de % de grasa corporal, un minijuego. Nada de
+eso se usa (es contenido de ellos).
+
+Por eso el módulo **Comida** implementa el método que MacroFactor explica públicamente (artículos
+de su equipo sobre cómo estiman el gasto), con fórmulas propias:
+
+| Pieza | Implementación en esta app |
+|---|---|
+| **Peso de tendencia** | Media móvil exponencial diaria, α = 0.1; los días sin pesaje se interpolan linealmente. |
+| **Gasto estimado (TDEE) inicial** | Mifflin-St Jeor × factor de actividad (1.2 a 1.9). |
+| **Gasto adaptativo** | Ventana de hasta 28 días: `promedio de kcal registradas − pendiente del peso × 7700 kcal/kg`, con la pendiente (kg/día) por mínimos cuadrados sobre los pesajes de la ventana (no tiene el retraso de la media móvil). Solo cuenta días con comida registrada; exige ≥ 7 días registrados y ≥ 4 pesajes que abarquen ≥ 6 días. Se mezcla con el valor anterior según la cantidad de datos y el cambio se limita a ±150 kcal por día de cálculo, para que no salte por un día raro. |
+| **Check-in semanal** | Meta de kcal = gasto − (ritmo objetivo en kg/semana × 7700 / 7). Ritmo de −1 % a +0.5 % del peso por semana. Piso de seguridad: 1200 kcal (mujer) / 1500 kcal (hombre). |
+| **Macros** | Proteína 1.6–2.2 g/kg (según objetivo), grasa ≥ 25 % de kcal, carbohidratos el resto. Editable. |
+| **Alimentos** | Base propia de alimentos comunes (valores por 100 g de tablas públicas), alimentos y recetas personalizados y escáner de código de barras contra Open Food Facts (la única conexión a internet, y solo cuando escaneas). |
+
+## 7. Pliability: el test de movilidad sí se calcula en el teléfono
+
+Las rutinas y sus videos vienen del servidor (no hay nada que reproducir sin su contenido). Lo
+interesante es el **test de movilidad**: corre MediaPipe Pose (`assets/mobility_pose_landmarker.task`)
+sobre la cámara y **calcula el puntaje localmente** (`com.business.mobility.assessment`).
+
+**Protocolo** (`MobilityAssessmentEngine`): 2 movimientos × 3 vistas = 6 tomas.
+
+| Movimiento | Vistas | Instrucción |
+|---|---|---|
+| Brazos arriba (*flexion*) | frente, lado izq., lado der. | De pie, brazos estirados sobre la cabeza |
+| Sentadilla con brazos arriba (*squat*) | frente, lado izq., lado der. | Bajar lo más profundo cómodo y sostener |
+
+Cada toma necesita sostener la postura ~5–9 s con el cuerpo completo en cuadro (largo del cuerpo
+entre 40 % y 100 % del alto de la imagen). Las medidas se promedian sobre los cuadros válidos.
+
+**Medidas** (`PoseMeasurements`): ángulos de 3 puntos (hombro, codo, cabeza, cadera, rodilla, tobillo
+respecto a la vertical, escápula), anchos normalizados (rodillas/tobillos, tobillos/cadera) y
+corrimientos de cadera y hombro, corregidos por la inclinación del teléfono.
+
+**Compensaciones** (`MobilityAssessmentScorer`, revisión 1.3), cada una de 0 a 1:
+
+| Compensación | Regla (resumen) |
+|---|---|
+| Cabeza inclinada | ángulo cabeza fuera de [140°, 172°] en sentadilla ([145°, 165°] brazos arriba), 10° = 1 |
+| Hombros encogidos | ángulo escapular / 50° |
+| Codos doblados | (170° − ángulo de codo) / 45° |
+| Espalda arqueada | diferencia corrimiento cadera vs hombro / 4.5° |
+| Brazos caen al frente | (180° − ángulo de hombro) / 55° |
+| Arco colapsado | rodillas/tobillos < 0.95 |
+| Rodillas hacia dentro (valgo) | (90° − ángulo rodilla-tobillo) / 18° |
+| Rodillas hacia fuera (varo) | (75° − ángulo) / 30° |
+| Peso cargado a un lado | centro corrido > 20 % del ancho de cadera |
+| Inclinación al frente | tobillo + cadera − rodilla < 50° |
+| Cadera sobre paralelo | profundidad de la sentadilla respecto a 90° |
+| Talones levantados | ángulo de tobillo < 65° y relación tobillo/cadera > 1.35 |
+
+**Puntaje por articulación** = `1 − (suma de compensaciones que le afectan / cuántas son)`,
+para espalda, hombros, codos, caderas, rodillas y tobillos (izq./der.). Valgo y varo se excluyen
+mutuamente. Puntaje general = promedio de *brazos arriba* y *sentadilla*. Las zonas a trabajar
+(“tags”) salen de las compensaciones de la articulación con menor puntaje.
+
+En esta app se reimplementó este flujo con **MediaPipe Tasks Vision para web** (el modelo oficial
+de Google, licencia Apache 2.0, descargado de Google, no del APK), con código y umbrales propios
+basados en esta descripción. Las rutinas de movilidad son propias: posturas con ilustración SVG,
+instrucciones escritas y temporizador guiado.

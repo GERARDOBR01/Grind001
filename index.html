@@ -7,7 +7,10 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Serie · Registro de entreno</title>
+<title>Serie · Gym, comida y movilidad</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
   *,*::before,*::after{box-sizing:border-box}
   :root{
@@ -355,9 +358,12 @@ const LIB = [
 
 /* ---------- estado ---------- */
 let S;
-const blank = () => ({v:1, units:'kg', rest:90, sound:true, prevMode:'any', dbl:false, custom:[], routines:[], folders:[], workouts:[], body:[], active:null});
+// los módulos (comida, movilidad) agregan su parte del estado, sus datos de ejemplo y sus pestañas
+const BLANKS = [], SEEDS = [];
+const blank = () => Object.assign({v:1, units:'kg', rest:90, sound:true, prevMode:'any', dbl:false, custom:[], routines:[], folders:[], workouts:[], body:[], active:null}, ...BLANKS.map(f => f()));
+const fill = d => { const b = blank(); for (const k in b) if (d[k] == null) d[k] = b[k]; return d; };
 function load(){
-  try { const raw = localStorage.getItem(KEY); if (raw) return Object.assign(blank(), JSON.parse(raw)); } catch(e){}
+  try { const raw = localStorage.getItem(KEY); if (raw) return fill(JSON.parse(raw)); } catch(e){}
   return null;
 }
 let saveT;
@@ -579,10 +585,10 @@ function render(resetScroll){
   $('#main').innerHTML = V.body;
   $('#app').classList.toggle('wk', t.v === 'workout');
   // barra de pestañas solo en las raíces
-  const root = NAV.length === 1 && ['home','train','me'].includes(t.v);
+  const root = NAV.length === 1 && TABS.some(x => x[0] === t.v);
   const tb = $('#tabbar');
   tb.style.display = root ? '' : 'none';
-  tb.firstElementChild.innerHTML = [['home','Inicio','home'],['train','Entrenar','dumb'],['me','Perfil','user']]
+  tb.firstElementChild.innerHTML = TABS
     .map(([k,l,i]) => `<button data-a="tab" data-k="${k}" ${TAB===k?'aria-current="page"':''}>${ic(i)}${l}</button>`).join('');
   $('#resume').innerHTML = S.active && root
     ? `<div class="resume"><button data-a="resume"><span class="pulse"></span><span style="flex:1"><b style="font-size:14px">Entreno en curso</b><br><span class="mut num" style="font-size:12.5px" data-clock>${clock((Date.now()-S.active.start)/1000)}</span><span class="mut" style="font-size:12.5px"> · ${esc(S.active.title)}</span></span><span class="link">Reanudar</span></button></div>` : '';
@@ -593,6 +599,7 @@ function render(resetScroll){
 
 /* ---------- vistas ---------- */
 const VIEWS = {};
+const TABS = [['home','Inicio','home'],['train','Entrenar','dumb'],['me','Perfil','user']];
 
 VIEWS.home = () => {
   const ws = sorted();
@@ -1306,8 +1313,8 @@ const A = {
   restDefPick(el){ S.rest = +el.dataset.k; close(); save(); render(); },
   export(){ download(`serie-respaldo-${stamp()}.json`, JSON.stringify({...S, active:null}, null, 1), 'application/json'); },
   exportCsv(){ download(`serie-series-${stamp()}.csv`, csv(), 'text/csv'); },
-  reseed(){ confirmBox('¿Restaurar datos de ejemplo?', 'Reemplaza tus entrenos, rutinas y peso por el ejemplo de 8 semanas.', 'Borrar y restaurar', () => { const k = S.custom; S = blank(); S.custom = k; indexEx(); seed(); saveNow(); tab('home'); }); },
-  wipe(){ confirmBox('¿Borrar todo?', 'Entrenos, rutinas, ejercicios personalizados y peso. No se puede deshacer.', 'Borrar todo', () => { S = blank(); indexEx(); prCache.clear(); saveNow(); tab('home'); }); },
+  reseed(){ confirmBox('¿Restaurar datos de ejemplo?', 'Reemplaza tus entrenos, rutinas, comidas, movilidad y peso por el ejemplo de 8 semanas.', 'Borrar y restaurar', () => { const k = S.custom; S = blank(); S.custom = k; indexEx(); seed(); SEEDS.forEach(f => f()); saveNow(); tab('home'); }); },
+  wipe(){ confirmBox('¿Borrar todo?', 'Entrenos, rutinas, comidas, sesiones de movilidad, ejercicios personalizados y peso. No se puede deshacer.', 'Borrar todo', () => { S = blank(); indexEx(); prCache.clear(); saveNow(); tab('home'); }); },
 };
 
 function plateSheet(target){
@@ -1357,7 +1364,7 @@ document.addEventListener('change', ev => {
     try {
       const d = JSON.parse(r.result);
       if (!Array.isArray(d.workouts)) throw 0;
-      S = Object.assign(blank(), d, {active:S.active}); indexEx(); prCache.clear(); saveNow(); toast('Respaldo importado'); tab('home');
+      S = fill(Object.assign(d, {active:S.active})); indexEx(); prCache.clear(); saveNow(); toast('Respaldo importado'); tab('home');
     } catch(e){ toast('Ese archivo no es un respaldo válido'); }
   };
   r.readAsText(ev.target.files[0]);
@@ -1373,13 +1380,22 @@ function autosize(){ document.querySelectorAll('textarea[data-note]').forEach(t 
 document.addEventListener('visibilitychange', () => { document.hidden ? saveNow() : tick(); });
 window.addEventListener('pagehide', saveNow);
 
+</script>
+<script src="js/foods.js"></script>
+<script src="js/nutri.js"></script>
+<script src="js/poses.js"></script>
+<script src="js/movil.js"></script>
+<script>
+'use strict';
 /* ---------- arranque ---------- */
 S = load();
-if (!S){ S = blank(); indexEx(); seed(); saveNow(); }
+if (!S){ S = blank(); indexEx(); seed(); SEEDS.forEach(f => f()); saveNow(); }
 indexEx();
 if (S.active) NAV = [{v:'home'}, {v:'workout'}];
 render(true);
 setInterval(tick, 1000);
+// sin internet: solo en la web (en el APK los archivos ya vienen dentro)
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !window.Capacitor) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>

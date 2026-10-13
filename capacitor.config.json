@@ -1,0 +1,8 @@
+{
+  "appId": "mx.serie.app",
+  "appName": "Serie",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0e0f12"
+  }
+}
