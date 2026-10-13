@@ -1,0 +1,45 @@
+name: APK
+
+# Compila el APK de Android y lo publica como Release:
+# https://github.com/<dueño>/<repo>/releases/latest/download/Serie.apk
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm run build && npx cap sync android
+      - name: Compilar
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}0
+        run: ./gradlew assembleRelease --no-daemon
+      - run: cp android/app/build/outputs/apk/release/app-release.apk Serie.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Serie-apk
+          path: Serie.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Serie (compilación ${{ github.run_number }})
+          body: APK de Serie compilado desde ${{ github.sha }}. Descárgalo en el teléfono y ábrelo para instalar.
+          files: Serie.apk
+          make_latest: true

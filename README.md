@@ -2,26 +2,61 @@
 
 <p align="center">
   <a href="https://gerardobr01.github.io/Grind001/"><img src="https://img.shields.io/badge/ABRIR_LA_APP-en_vivo-D9822B?style=for-the-badge&logoColor=white" alt="Abrir la app"></a>
-  <img src="https://img.shields.io/badge/HTML-un_solo_archivo-1F2328?style=for-the-badge" alt="Un solo archivo">
-  <img src="https://img.shields.io/badge/sin_build-sin_backend-7C8896?style=for-the-badge" alt="Sin build ni backend">
+  <a href="apk/Serie.apk"><img src="https://img.shields.io/badge/DESCARGAR-APK_Android-3FAE6A?style=for-the-badge" alt="Descargar APK"></a>
+  <img src="https://img.shields.io/badge/sin_backend-sin_cuenta-7C8896?style=for-the-badge" alt="Sin backend ni cuenta">
   <img src="https://img.shields.io/badge/datos-en_el_teléfono-3FAE6A?style=for-the-badge" alt="Datos en el teléfono">
 </p>
 
 **Lo que no se anota, no se supera.**
 
-Registro de entrenamiento de gimnasio inspirado en el flujo de las apps tipo *gym log*
-(Hevy, Strong). Un solo archivo, `index.html`, sin build, sin backend, sin dependencias. Se abre
-desde un link en el celular, se agrega a la pantalla de inicio y funciona sin internet.
+Tres apps en una: **gym** (tipo Hevy), **comida** con gasto adaptativo (tipo MacroFactor) y
+**movilidad** guiada con test por cámara (tipo Pliability). Sin backend ni cuenta: todo vive en el
+teléfono. Se instala como **APK de Android** o se abre desde el link y se agrega a la pantalla de
+inicio; funciona sin internet.
+
+## Instalar
+
+| | |
+|---|---|
+| **Android (APK)** | Descarga [`apk/Serie.apk`](apk/Serie.apk) en el teléfono, ábrelo y permite «instalar apps de origen desconocido» cuando lo pida. Cada push a `main` compila uno nuevo en *Releases* (GitHub Actions). |
+| **Web** | Abre el link de la app y en el menú del navegador elige «Agregar a pantalla de inicio». |
 
 <p align="center">
   <img src="assets/inicio.png" alt="Inicio: racha semanal y lista de entrenos" width="250">
   <img src="assets/entreno.png" alt="Entreno en curso: series con anterior, peso, reps, check y temporizador de descanso" width="250">
   <img src="assets/ejercicio.png" alt="Ejercicio: gráfica de peso máximo y récords personales" width="250">
 </p>
+<p align="center">
+  <img src="assets/comida.png" alt="Comida: calorías restantes, macros y comidas del día" width="250">
+  <img src="assets/movilidad.png" alt="Movilidad: puntaje del test, minutos por semana y rutinas" width="250">
+  <img src="assets/test.png" alt="Resultado del test de movilidad por articulación" width="250">
+</p>
 
 ---
 
 ## Qué hace
+
+### Comida
+
+| | |
+|---|---|
+| **Registro diario** | Desayuno, comida, cena y colaciones; anillo de calorías restantes y barras de proteína, carbohidratos y grasa. |
+| **Alimentos** | Base propia de ~170 alimentos comunes en México (por 100 g, con porción típica), búsqueda sin acentos, recientes, favoritos, alimentos propios, comidas guardadas, registro rápido y copiar el día anterior. |
+| **Código de barras** | Escanea con la cámara (o escribe el número) y busca en Open Food Facts; lo encontrado queda guardado para usarse sin internet. |
+| **Peso de tendencia** | Media móvil exponencial que filtra agua y comida del día. |
+| **Gasto adaptativo** | Calorías registradas menos la pendiente del peso × 7700 kcal/kg, en una ventana de 28 días; arranca con Mifflin-St Jeor. |
+| **Check-in semanal** | Recalcula metas con el gasto real, tu objetivo (perder, mantener, ganar) y el ritmo elegido. |
+
+### Movilidad
+
+| | |
+|---|---|
+| **Rutinas guiadas** | 12 rutinas (cadera, espalda baja, hombros, después de pierna/empuje/jalón, para correr, antes de dormir…) y las tuyas. 36 posturas con ilustración e instrucciones. |
+| **Reproductor** | Preparación, temporizador por postura, cambio de lado automático, voz en español, sonidos de conteo y pantalla encendida. |
+| **Recomendada** | Arma una rutina con las zonas de tu último entreno y de tu último test. |
+| **Test con cámara** | Brazos arriba y sentadilla, de frente y de cada lado. MediaPipe detecta la pose en el teléfono (no se envía video), calcula compensaciones y da un puntaje por articulación y las zonas a trabajar. |
+
+### Gym
 
 | | |
 |---|---|
@@ -47,11 +82,11 @@ referencia con REA y `hermes-dec` para obtener las fórmulas reales (1RM, volume
 pública de referencia. **No se copió código, textos, imágenes ni marca de ninguna app**: se
 reproduce el *comportamiento* con una implementación propia.
 
-## Reglas que el archivo respeta
+## Reglas que la app respeta
 
-- **Marca propia.** La app se llama *Serie*; no usa nombre, logo ni recursos de terceros.
-- **Cero llamadas de red.** Ni fuentes, ni analítica, ni CDN.
-- **Los datos son del usuario.** Todo vive en `localStorage` del navegador; respaldo con un toque.
+- **Marca propia.** La app se llama *Serie*; no usa nombre, logo, textos, videos ni bases de datos de terceros.
+- **Sin red, salvo el escáner.** Ni fuentes, ni analítica, ni CDN. La única conexión es buscar un código de barras en Open Food Facts cuando tú lo pides.
+- **Los datos son del usuario.** Todo vive en el teléfono; respaldo JSON con un toque (incluye comida y movilidad).
 - **Primera vez con ejemplo.** Al abrir por primera vez se cargan 8 semanas de una rutina
   Empuje / Jalón / Pierna para que las gráficas tengan algo que mostrar. *Ajustes → Borrar todo*
   deja la app en blanco.
@@ -66,11 +101,21 @@ reproduce el *comportamiento* con una implementación propia.
 | `VIEWS` | Una función por pantalla: `home`, `train`, `workout`, `routine`, `finish`, `wv`, `lib`, `ex`, `me`, `cfg`. |
 | `A` | Todas las acciones; cada botón dice cuál usa con `data-a`. |
 | `seed()` | Los datos de ejemplo de la primera vez. |
+| `BLANKS` / `SEEDS` / `TABS` | Cómo cada módulo agrega su estado, sus datos de ejemplo y su pestaña. |
+| `js/foods.js` | Base de alimentos `[id, nombre, kcal, P, C, G, porción_g, porción, categoría]`. |
+| `js/nutri.js` · `NUT` | Tendencia de peso, gasto adaptativo y metas. |
+| `js/poses.js` | Posturas: zonas, segundos, instrucciones y figura (coordenadas de articulaciones). |
+| `js/movil.js` · `ROUTINES`, `MT` | Rutinas; detección, medidas y puntaje del test de movilidad. |
 
 ## Publicar
 
-GitHub Pages sirviendo la raíz de la rama. `index.html` está en la raíz, así que no hace falta
-configuración adicional.
+- **Web:** GitHub Pages sirviendo la raíz de la rama. `sw.js` guarda la app para usarla sin internet.
+- **APK:** `npm install && npm run apk` (requiere JDK 21 y el SDK de Android) deja el APK en
+  `android/app/build/outputs/apk/release/`. Capacitor empaqueta los mismos archivos web (`npm run build` → `www/`).
+  La voz y la pantalla encendida usan los plugins `text-to-speech` y `keep-awake` dentro del APK.
+- **Firma:** `android/serie-release.jks` y `android/keystore.properties` están en el repo a propósito,
+  para que cualquier compilación (local o Actions) firme igual y el APK nuevo se instale encima del
+  anterior sin perder datos. Es una llave solo para esta app personal.
 
 ---
 

@@ -201,15 +201,23 @@ VIEWS.medit = t => {
 
 /* ---------- reproductor ---------- */
 let PLAY = null, PLAYT = null, WAKE = null;
+// en el APK la voz y la pantalla encendida van por plugins nativos; en la web, por el navegador
+const NATIVE = () => (window.Capacitor && window.Capacitor.Plugins) || {};
 function speak(txt){
-  if (!S.mov.voice || !window.speechSynthesis) return;
+  if (!S.mov.voice) return;
+  const tts = NATIVE().TextToSpeech;
+  if (tts){ tts.stop().catch(() => {}).finally(() => tts.speak({text:txt, lang:'es-MX', rate:1, category:'playback'}).catch(() => {})); return; }
+  if (!window.speechSynthesis) return;
   try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt); u.lang = 'es-MX'; u.rate = 1; speechSynthesis.speak(u); } catch(e){}
 }
+function hush(){ const tts = NATIVE().TextToSpeech; if (tts) tts.stop().catch(() => {}); try { speechSynthesis.cancel(); } catch(e){} }
 function tock(f = 660){
   if (!S.sound) return;
   try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); const o = audio.createOscillator(), g = audio.createGain(); o.frequency.value = f; o.connect(g); g.connect(audio.destination); const t0 = audio.currentTime; g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.18, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + .12); o.start(t0); o.stop(t0 + .13); } catch(e){}
 }
 async function wake(on){
+  const ka = NATIVE().KeepAwake;
+  if (ka){ try { on ? await ka.keepAwake() : await ka.allowSleep(); } catch(e){} return; }
   try { if (on && navigator.wakeLock && !WAKE) WAKE = await navigator.wakeLock.request('screen'); else if (!on && WAKE){ await WAKE.release(); WAKE = null; } } catch(e){}
 }
 const PREP = 5;
@@ -257,7 +265,7 @@ function endPlay(done){
     S.mov.sessions.push({id:uid(), t:P.start, title:P.title, rid:P.rid, secs:Math.round(P.active), n});
     save();
   }
-  try { speechSynthesis.cancel(); } catch(e){}
+  hush();
   if (done){ NAV[NAV.length-1] = {v:'mdone', secs:Math.round(P.active), title:P.title, n:P.steps.length}; render(true); }
 }
 VIEWS.play = () => {
