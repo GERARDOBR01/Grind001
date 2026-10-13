@@ -604,7 +604,7 @@ function newSet(t = 'n'){ return {t, kg:null, reps:null, secs:null, km:null, don
 function exEntry(id){ return {id, notes:'', rest:S.rest, sets:[newSet(), newSet(), newSet()]}; }
 function partOfDay(t){ const h = new Date(t).getHours(); return h < 12 ? 'Entreno de la mañana' : h < 19 ? 'Entreno de la tarde' : 'Entreno de la noche'; }
 function begin(a){
-  const run = () => { S.active = a; save(); NAV = [{v:TAB}, {v:'workout'}]; close(); render(true); };
+  const run = () => { S.active = a; save(); close(); nav([{v:TAB}, {v:'workout'}]); };
   if (S.active) confirmBox('Ya tienes un entreno en curso', 'Si empiezas otro, el actual se descarta.', 'Descartar y empezar', run);
   else run();
 }
@@ -712,7 +712,7 @@ Object.assign(A, {
     const w = {id:a.id, title, routineId:a.routineId, desc:$('#fdesc').value.trim(), start:a.start, end:Date.now(),
       ex:a.ex.map(e => ({id:e.id, notes:e.notes, rest:e.rest, ss:e.ss ?? null, sets:e.sets.filter(s => s.done).map(({t,kg,reps,secs,km,rpe}) => ({t,kg,reps,secs,km,rpe:rpe ?? null}))})).filter(e => e.sets.length)};
     S.workouts.push(w); S.active = null; prCache.clear(); save();
-    TAB = 'home'; NAV = [{v:'home'}, {v:'wv', id:w.id, fresh:true}]; render(true);
+    TAB = 'home'; nav([{v:'home'}, {v:'wv', id:w.id, fresh:true}]);
   },
   discard(){ confirmBox('¿Descartar entreno?', 'Se pierde todo lo que registraste en este entreno.', 'Descartar', () => { S.active = null; save(); NAV = [{v:TAB}]; render(true); }); },
   addEx(){ go('lib', {pick:true, sel:[]}); },
@@ -935,7 +935,7 @@ function autosize(){ document.querySelectorAll('textarea[data-note]').forEach(t 
 /* ---------- ganchos del núcleo ---------- */
 HOOKS.reset.push(() => { indexEx(); prCache.clear(); });
 HOOKS.tick.push(tick);
-HOOKS.boot.push(() => { if (S.active) NAV = [{v:'home'}, {v:'workout'}]; });
+HOOKS.boot.push(() => { if (S.active){ NAV = [{v:'home'}]; nav([{v:'home'}, {v:'workout'}]); } });
 HOOKS.render.push((t, root) => {
   $('#app').classList.toggle('wk', t.v === 'workout');
   $('#resume').innerHTML = S.active && root

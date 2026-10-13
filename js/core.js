@@ -77,6 +77,14 @@ window.addEventListener('popstate', () => {
   if (NAV.length > 1){ NAV.pop(); render(true); }
 });
 function tab(t){ TAB = t; NAV = [{v:t}]; render(true); }
+// cambia la pila de vistas de golpe; cada nivel nuevo lleva su entrada en el historial,
+// para que el botón atrás del teléfono regrese en vez de salir de la app
+function nav(stack){
+  const extra = stack.length - NAV.length;
+  NAV = stack;
+  for (let i = 0; i < extra; i++) try { history.pushState(null, ''); } catch(e){}
+  render(true);
+}
 
 const I = {
   back:'<path d="M15 18l-6-6 6-6"/>', more:'<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',

@@ -117,6 +117,15 @@ reproduce el *comportamiento* con una implementación propia.
 | `js/poses.js` | Posturas: zonas, segundos, instrucciones y figura (coordenadas de articulaciones). |
 | `js/movil.js` · `ROUTINES`, `MT` | Rutinas; detección, medidas y puntaje del test de movilidad. |
 
+## Pruebas
+
+`npm install && npx playwright install chromium && npm test` corre 17 pruebas en un navegador con
+pantalla de teléfono: pestañas, entreno completo y botón atrás, fórmulas del gym, registro de
+comida, plan y check-in, gasto adaptativo con datos simulados, rutina guiada, rutina propia, test de
+movilidad con poses sintéticas, carga del detector de pose con cámara falsa, respaldo, borrar,
+restaurar y persistencia. Cualquier error de JavaScript hace fallar la prueba. GitHub Actions las
+corre en cada push y pull request (`.github/workflows/test.yml`).
+
 ## Publicar
 
 - **Web:** GitHub Pages sirviendo la raíz de la rama. `sw.js` guarda la app para usarla sin internet.
