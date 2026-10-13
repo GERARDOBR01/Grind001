@@ -25,6 +25,22 @@ copiar código) resultaron suficientes:
    de datos completo de entrenos, rutinas, ejercicios y medidas.
 2. La **lista de funciones** publicada en su sitio y la ficha de Google Play.
 
+### Corrida de REA sobre el APK subido
+
+Se instaló `rea-agents` 6.4.0 con el motor `jadx-headless-mcp` 0.7.1; su SHA-256
+(`6e5eacf5…ff75`) coincide con el que REA audita. Resultado de `rea inspect-android-package`:
+
+| Campo | Valor |
+|---|---|
+| `package_name` | `com.uptodown` (no `com.hevy`) |
+| `version_name` | 7.40 |
+| Clases | 13,958; `search-android-classes hevy` → **0 coincidencias** |
+| Actividad principal | `com.uptodown.activities.MainActivity` |
+
+El archivo `uptodown-com.hevy.apk` es el **instalador de la tienda Uptodown**, no Hevy. Para
+analizar Hevy hace falta extraer el APK del teléfono (p. ej. con ML Manager) o bajarlo de APKMirror
+verificando que el desarrollador sea Hevy Studios S.L.
+
 ### Cómo correr REA tú mismo (opcional)
 
 Si quieres profundizar en implementación nativa, desde tu computadora con el teléfono por USB:
@@ -44,9 +60,9 @@ app comercial tienen derechos de autor.
 | Entidad de referencia | Campos clave | En *Serie* |
 |---|---|---|
 | `Set.type` | `warmup`, `normal`, `failure`, `dropset` | `t`: `w`, `n`, `f`, `d` |
-| `Set` | `weight_kg`, `reps`, `distance_meters`, `duration_seconds`, `rpe` | `kg`, `reps`, `km`, `secs` (RPE: pendiente) |
+| `Set` | `weight_kg`, `reps`, `distance_meters`, `duration_seconds`, `rpe` (6–10) | `kg`, `reps`, `km`, `secs`, `rpe` (mismos valores) |
 | `Exercise` | `exercise_template_id`, `superset_id`, `notes`, `sets[]` | `id`, `ss`, `notes`, `sets[]`, más `rest` |
-| `Routine` exercise | `rest_seconds`, `sets[]` con `rep_range` | `rest`, `sets[]` como objetivo (`ph`) |
+| `Routine` exercise | `rest_seconds`, `sets[]` con `rep_range` | `rest`, `sets[]` como objetivo (`ph`); `rr: [min, max]` al escribir «8-12» |
 | `ExerciseTemplate.type` | `weight_reps`, `bodyweight_reps`, `reps_only`, `duration`, `distance_duration`, … | `wr`, `bw`, `r`, `d`, `cd` |
 | `primary_muscle_group` / `secondary_muscle_groups` | 20 grupos | `m` / `sec`, mismas claves en inglés, etiquetas en español |
 | `equipment` | `barbell`, `dumbbell`, `machine`, … | `eq` (agregamos `cable` = polea) |
@@ -79,5 +95,5 @@ Lista de funciones de referencia → decisión en *Serie*:
 
 **Fuera de alcance** (requieren cuenta, servidor o un dispositivo): feed social, seguidores,
 comentarios, reloj inteligente, videos de ejercicios, Strava, coach. **Pendientes razonables** para
-una siguiente iteración: RPE por serie, rango de reps en rutinas, carpetas de rutinas, fotos de
-progreso, medidas en cm, reemplazar ejercicio sin perder series, reordenar arrastrando.
+una siguiente iteración: carpetas de rutinas, fotos de
+progreso, medidas en cm, reordenar arrastrando. (RPE, rangos de reps y reemplazar ejercicio ya están.)

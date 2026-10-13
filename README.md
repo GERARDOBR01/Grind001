@@ -27,11 +27,12 @@ desde un link en el celular, se agrega a la pantalla de inicio y funciona sin in
 |---|---|
 | **Entreno en curso** | Cronómetro, volumen y series en vivo. Tabla por ejercicio: *Serie · Anterior · Peso · Reps · ✓*. Si dejas un campo vacío y marcas la serie, toma el objetivo de la rutina o lo de la vez pasada. |
 | **Tipos de serie** | Calentamiento (C), normal (1, 2, 3…), al fallo (F) y drop set (D). Los calentamientos no cuentan en la numeración ni en la distribución muscular. |
+| **RPE** | Al tocar el número de serie: esfuerzo percibido de 6 a 10, se muestra como `@8` y en la columna *Anterior*. |
 | **Descanso automático** | Al marcar una serie arranca el temporizador del ejercicio: −15 / +15 / saltar, con sonido y vibración al terminar. |
 | **Récords en vivo** | Peso máximo, 1RM estimado (Epley) y mejor serie. Avisa en el momento en que los rompes; la primera vez que haces un ejercicio no cuenta como récord. |
-| **Rutinas** | Crear, editar, duplicar, eliminar. Las series de la rutina se vuelven el objetivo (texto gris) al empezarla. Cualquier entreno se puede repetir o guardar como rutina. |
+| **Rutinas** | Crear, editar, duplicar, eliminar. Las series de la rutina se vuelven el objetivo (texto gris) al empezarla. Las reps aceptan rango (`8-12`). Cualquier entreno se puede repetir o guardar como rutina. |
 | **Biblioteca** | 66 ejercicios en español con músculo principal, secundarios y equipo; búsqueda sin acentos, filtro por músculo, “más usados” y ejercicios personalizados. |
-| **Herramientas** | Calentamiento automático (40/60/80 % × 10/5/3), calculadora de discos, superseries, notas por ejercicio, tabla de repeticiones máximas. |
+| **Herramientas** | Calentamiento automático (40/60/80 % × 10/5/3), reemplazar ejercicio, calculadora de discos, superseries, notas por ejercicio, tabla de repeticiones máximas. |
 | **Progreso** | Gráfica de 12 semanas (duración, volumen o series), calendario, series por músculo en 30 días, racha semanal, peso corporal. |
 | **Datos** | kg o lb, respaldo JSON (exportar/importar), exportación de series en CSV. |
 
