@@ -173,7 +173,7 @@ de su equipo sobre cómo estiman el gasto), con fórmulas propias:
 |---|---|
 | **Peso de tendencia** | Media móvil exponencial diaria, α = 0.1; los días sin pesaje se interpolan linealmente. |
 | **Gasto estimado (TDEE) inicial** | Mifflin-St Jeor × factor de actividad (1.2 a 1.9). |
-| **Gasto adaptativo** | Ventana de hasta 28 días: `promedio de kcal registradas − (Δ peso de tendencia × 7700 kcal/kg) / días`. Solo cuenta días con comida registrada; exige ≥ 7 días registrados y ≥ 3 pesajes. Se mezcla con el valor anterior según la cantidad de datos y el cambio se limita a ±150 kcal por día de cálculo, para que no salte por un día raro. |
+| **Gasto adaptativo** | Ventana de hasta 28 días: `promedio de kcal registradas − pendiente del peso × 7700 kcal/kg`, con la pendiente (kg/día) por mínimos cuadrados sobre los pesajes de la ventana (no tiene el retraso de la media móvil). Solo cuenta días con comida registrada; exige ≥ 7 días registrados y ≥ 4 pesajes que abarquen ≥ 6 días. Se mezcla con el valor anterior según la cantidad de datos y el cambio se limita a ±150 kcal por día de cálculo, para que no salte por un día raro. |
 | **Check-in semanal** | Meta de kcal = gasto − (ritmo objetivo en kg/semana × 7700 / 7). Ritmo de −1 % a +0.5 % del peso por semana. Piso de seguridad: 1200 kcal (mujer) / 1500 kcal (hombre). |
 | **Macros** | Proteína 1.6–2.2 g/kg (según objetivo), grasa ≥ 25 % de kcal, carbohidratos el resto. Editable. |
 | **Alimentos** | Base propia de alimentos comunes (valores por 100 g de tablas públicas), alimentos y recetas personalizados y escáner de código de barras contra Open Food Facts (la única conexión a internet, y solo cuando escaneas). |
