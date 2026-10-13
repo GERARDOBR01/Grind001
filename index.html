@@ -274,8 +274,11 @@ const EQUIP = {
   plate:'Disco', resistance_band:'Banda', none:'Sin equipo', other:'Otro'
 };
 const TYPE = {
-  wr:'Peso y repeticiones', bw:'Peso corporal (+lastre)', r:'Solo repeticiones', d:'Duración', cd:'Distancia y tiempo'
+  wr:'Peso y repeticiones', bw:'Peso corporal (+lastre)', as:'Peso corporal asistido', r:'Solo repeticiones',
+  wd:'Peso y duración', d:'Duración', cd:'Distancia y tiempo'
 };
+// ejercicios en los que se levanta el 100 % del peso corporal: su volumen lo incluye
+const FULL_BW = new Set(['pull','chin','dip','asp','asd']);
 // [id, nombre, músculo, secundarios, equipo, tipo]
 const LIB = [
   ['bp','Press de banca (barra)','chest',['triceps','shoulders'],'barbell','wr'],
@@ -298,6 +301,10 @@ const LIB = [
   ['spo','Pullover en polea','lats',[],'cable','wr'],
   ['dl','Peso muerto (barra)','lower_back',['hamstrings','glutes','traps'],'barbell','wr'],
   ['hyp','Hiperextensiones','lower_back',['glutes','hamstrings'],'none','bw'],
+  ['asp','Dominadas asistidas (máquina)','lats',['biceps','upper_back'],'machine','as'],
+  ['asd','Fondos asistidos (máquina)','triceps',['chest','shoulders'],'machine','as'],
+  ['farm','Paseo del granjero','forearms',['traps','full_body'],'dumbbell','wd'],
+  ['wplk','Plancha con peso','abdominals',[],'plate','wd'],
   ['fp','Face pull (polea)','shoulders',['upper_back'],'cable','wr'],
   ['ohp','Press militar (barra)','shoulders',['triceps'],'barbell','wr'],
   ['dsp','Press de hombro (mancuernas)','shoulders',['triceps'],'dumbbell','wr'],
@@ -348,7 +355,7 @@ const LIB = [
 
 /* ---------- estado ---------- */
 let S;
-const blank = () => ({v:1, units:'kg', rest:90, sound:true, custom:[], routines:[], folders:[], workouts:[], body:[], active:null});
+const blank = () => ({v:1, units:'kg', rest:90, sound:true, prevMode:'any', dbl:false, custom:[], routines:[], folders:[], workouts:[], body:[], active:null});
 function load(){
   try { const raw = localStorage.getItem(KEY); if (raw) return Object.assign(blank(), JSON.parse(raw)); } catch(e){}
   return null;
@@ -404,6 +411,8 @@ const initials = name => name.replace(/\(.*?\)/g,'').trim().split(/\s+/).filter(
 function cols(type){
   switch(type){
     case 'bw': return [['kg','+'+U()],['reps','REPS']];
+    case 'as': return [['kg','−'+U()],['reps','REPS']];
+    case 'wd': return [['kg',U()],['secs','SEG']];
     case 'r':  return [['reps','REPS']];
     case 'd':  return [['secs','SEG']];
     case 'cd': return [['km','KM'],['min','MIN']];
@@ -422,7 +431,8 @@ function setF(o, f, v){
   else o[f] = v;
 }
 const hasVal = (s, type) => type === 'wr' ? s.reps != null && s.kg != null
-                         : type === 'bw' || type === 'r' ? s.reps != null
+                         : type === 'bw' || type === 'r' || type === 'as' ? s.reps != null
+                         : type === 'wd' ? s.kg != null && s.secs != null
                          : type === 'd' ? s.secs != null
                          : s.km != null || s.secs != null;
 function setText(s, type){
@@ -430,6 +440,8 @@ function setText(s, type){
   switch(type){
     case 'wr': return `${wt(s.kg ?? 0)} ${u()} × ${s.reps ?? 0}`;
     case 'bw': return (s.kg ? `+${wt(s.kg)} ${u()} × ` : '') + `${s.reps ?? 0} reps`;
+    case 'as': return (s.kg ? `−${wt(s.kg)} ${u()} × ` : '') + `${s.reps ?? 0} reps`;
+    case 'wd': return `${wt(s.kg ?? 0)} ${u()} · ${clock(s.secs ?? 0)}`;
     case 'r':  return `${s.reps ?? 0} reps`;
     case 'd':  return clock(s.secs ?? 0);
     case 'cd': return [s.km != null ? nf(s.km,2)+' km' : null, s.secs != null ? clock(s.secs) : null].filter(Boolean).join(' · ');
@@ -439,9 +451,29 @@ const setTextR = (s, type) => setText(s, type) + (s && s.rpe ? ` @${nf(s.rpe)}` 
 // RPE: mismos valores que acepta la API de referencia
 const RPE = [6, 7, 7.5, 8, 8.5, 9, 9.5, 10];
 const RPE_TXT = {6:'Podías 4 más', 7:'Podías 3 más', 7.5:'2 o 3 más', 8:'Podías 2 más', 8.5:'1 o 2 más', 9:'Podías 1 más', 9.5:'Quizá 1 más', 10:'Esfuerzo máximo'};
-const setVol = (s, type) => (type === 'wr' || type === 'bw') ? (s.kg || 0) * (s.reps || 0) : 0;
-// 1RM estimado (Epley). Sin sentido por arriba de ~12 reps, se acota.
-const e1rm = (s, type) => type === 'wr' && s.kg > 0 && s.reps > 0 ? (s.reps === 1 ? s.kg : s.kg * (1 + Math.min(s.reps,12)/30)) : 0;
+// Volumen de una serie, con las mismas reglas que la app de referencia:
+// peso corporal suma en los ejercicios de 100 % peso corporal, asistidos restan,
+// y las mancuernas pueden contar doble (una por mano) si se activa en Ajustes.
+function setVol(s, x, bw = 0){
+  const k = (s.kg || 0) * (S.dbl && x.eq === 'dumbbell' && x.type === 'wr' ? 2 : 1), r = s.reps || 0, full = FULL_BW.has(x.id);
+  switch(x.type){
+    case 'wr': return k * r;
+    case 'bw': return (k + (full ? bw : 0)) * r;
+    case 'as': return full ? Math.max((bw - k) * r, 0) : 0;
+    case 'r':  return full ? bw * r : 0;
+    case 'wd': return k;
+    default:   return 0;
+  }
+}
+// 1RM estimado: peso / % del máximo que se levanta a esas reps (tabla porcentual; >30 reps = 50 %)
+const PCT = [0, 1, .97, .94, .92, .89, .86, .83, .81, .78, .75, .73, .71, .7, .68, .67, .65, .64, .63, .61, .6, .59, .58, .57, .56, .55, .54, .53, .52, .51, .5];
+const e1rm = (s, x) => x.type === 'wr' && s.kg > 0 && s.reps > 0 ? s.kg / (s.reps > 30 ? .5 : PCT[s.reps]) : 0;
+// peso corporal registrado más cercano antes de la fecha; si no hay, el primero
+function bwAt(t){
+  const b = S.body.filter(b => b.kg).sort((a,c) => a.t - c.t);
+  let v = b.length ? b[0].kg : 0; for (const e of b) if (e.t <= t) v = e.kg;
+  return v;
+}
 function setLabel(sets, i){
   const s = sets[i];
   if (s.t === 'w') return 'C';
@@ -454,34 +486,38 @@ const SETT = {w:['C','Calentamiento','w'], n:['1','Normal',''], f:['F','Al fallo
 
 /* ---------- consultas sobre el historial ---------- */
 const sorted = () => S.workouts.slice().sort((a,b) => b.start - a.start);
-function workoutVol(w){ let v = 0; for (const e of w.ex) for (const s of e.sets) v += setVol(s, EX(e.id).type); return v; }
+// los calentamientos no suman volumen
+function workoutVol(w){ const bw = bwAt(w.start); let v = 0; for (const e of w.ex) for (const s of e.sets) if (s.t !== 'w') v += setVol(s, EX(e.id), bw); return v; }
 const workoutSets = w => w.ex.reduce((n,e) => n + e.sets.length, 0);
 // serie equivalente del entreno anterior: calentamientos con calentamientos, efectivas con efectivas
 function prevFor(exId, sets, si){
-  const prev = lastSetsFor(exId); if (!prev) return null;
+  const rid = S.prevMode === 'routine' && S.active ? S.active.routineId : null;
+  const prev = (rid && lastSetsFor(exId, Infinity, rid)) || lastSetsFor(exId); if (!prev) return null;
   const w = sets[si].t === 'w', k = sets.slice(0, si).filter(s => (s.t === 'w') === w).length;
   return prev.filter(s => (s.t === 'w') === w)[k] || null;
 }
-function lastSetsFor(exId, before = Infinity){
-  for (const w of sorted()) if (w.start < before) { const e = w.ex.find(e => e.id === exId); if (e) return e.sets; }
+function lastSetsFor(exId, before = Infinity, rid = null){
+  for (const w of sorted()) if (w.start < before && (!rid || w.routineId === rid)) { const e = w.ex.find(e => e.id === exId); if (e) return e.sets; }
   return null;
 }
-// métricas de récord por serie
+// métricas de récord por serie; f(serie, ejercicio, peso corporal)
 const MET = {
-  w:   {lbl:'Peso máximo',      f:(s,t) => t === 'wr' || t === 'bw' ? s.kg || 0 : 0, fmt:v => wt(v)+' '+u()},
+  w:   {lbl:'Peso máximo',      f:(s,x) => ['wr','bw','wd'].includes(x.type) ? s.kg || 0 : 0, fmt:v => wt(v)+' '+u()},
   e1:  {lbl:'1RM estimado',     f:e1rm, fmt:v => wt(v)+' '+u()},
   sv:  {lbl:'Mejor serie',      f:setVol, fmt:v => vol(v)},
-  reps:{lbl:'Más repeticiones', f:(s,t) => t === 'r' || t === 'bw' ? s.reps || 0 : 0, fmt:v => v+' reps'},
-  secs:{lbl:'Mayor duración',   f:(s,t) => t === 'd' || t === 'cd' ? s.secs || 0 : 0, fmt:v => clock(v)},
-  km:  {lbl:'Mayor distancia',  f:(s,t) => t === 'cd' ? s.km || 0 : 0, fmt:v => nf(v,2)+' km'},
+  reps:{lbl:'Más repeticiones', f:(s,x) => ['r','bw','as'].includes(x.type) ? s.reps || 0 : 0, fmt:v => v+' reps'},
+  secs:{lbl:'Mayor duración',   f:(s,x) => ['d','cd','wd'].includes(x.type) ? s.secs || 0 : 0, fmt:v => clock(v)},
+  km:  {lbl:'Mayor distancia',  f:(s,x) => x.type === 'cd' ? s.km || 0 : 0, fmt:v => nf(v,2)+' km'},
 };
-const metsFor = t => t === 'wr' ? ['w','e1','sv'] : t === 'bw' ? ['reps','w','sv'] : t === 'r' ? ['reps'] : t === 'd' ? ['secs'] : ['km','secs'];
+const metsFor = t => ({wr:['w','e1','sv'], bw:['reps','w','sv'], as:['reps'], r:['reps'], wd:['w','secs'], d:['secs'], cd:['km','secs']})[t];
+// los calentamientos nunca cuentan como récord
 function bests(exId, before = Infinity, skipWid = null){
-  const t = EX(exId).type, b = {};
-  for (const k of metsFor(t)) b[k] = 0;
+  const x = EX(exId), b = {};
+  for (const k of metsFor(x.type)) b[k] = 0;
   for (const w of S.workouts){
     if (w.start >= before || w.id === skipWid) continue;
-    for (const e of w.ex) if (e.id === exId) for (const s of e.sets) for (const k in b) b[k] = Math.max(b[k], MET[k].f(s,t));
+    const bw = bwAt(w.start);
+    for (const e of w.ex) if (e.id === exId) for (const s of e.sets) if (s.t !== 'w') for (const k in b) b[k] = Math.max(b[k], MET[k].f(s, x, bw));
   }
   return b;
 }
@@ -489,10 +525,10 @@ function bests(exId, before = Infinity, skipWid = null){
 function workoutPRs(w){
   const out = [];
   for (const e of w.ex){
-    const t = EX(e.id).type, b = bests(e.id, w.start, w.id);
+    const x = EX(e.id), b = bests(e.id, w.start, w.id), bw = bwAt(w.start);
     if (Object.values(b).every(v => !v)) continue;          // primera vez: no cuenta como récord
     const hit = new Set();
-    for (const s of e.sets) for (const k in b){ const v = MET[k].f(s,t); if (v > b[k]){ b[k] = v; hit.add(k); s.pr = 1; } }
+    for (const s of e.sets) if (s.t !== 'w') for (const k in b){ const v = MET[k].f(s, x, bw); if (v > b[k]){ b[k] = v; hit.add(k); s.pr = 1; } }
     for (const k of hit) out.push({ex:e.id, k});
   }
   return out;
@@ -595,7 +631,7 @@ VIEWS.train = () => {
   const rs = S.routines.map(r => `
     <div class="card">
       <div style="display:flex;align-items:flex-start;gap:8px;padding:14px 10px 0 14px">
-        <div style="flex:1;min-width:0"><div class="h2">${esc(r.title)}</div>
+        <div style="flex:1;min-width:0"><div class="h2">${esc(r.title)}</div><div class="lbl" style="margin-top:4px">${r.ex.length} ejercicios · ≈ ${dur(estDur(r))}</div>
           <div class="mut" style="font-size:13px;margin-top:4px;line-height:1.4">${esc(r.ex.map(e => EX(e.id).name).join(', ')) || 'Sin ejercicios'}</div></div>
         <button class="ib" data-a="routineMenu" data-id="${r.id}" aria-label="Opciones">${ic('more')}</button>
       </div>
@@ -611,6 +647,12 @@ VIEWS.train = () => {
       <div style="height:16px"></div>`
   };
 };
+
+function estDur(r){
+  let t = 0;
+  for (const e of r.ex){ const x = EX(e.id); for (const s of e.sets) t += (['d','wd'].includes(x.type) && s.secs ? s.secs : 45) + (s.t === 'd' ? 0 : e.rest ?? S.rest); }
+  return t;
+}
 
 /* ----- entreno activo y editor de rutina comparten la tarjeta de ejercicio ----- */
 function exCard(e, ei, mode){
@@ -645,7 +687,8 @@ function exCard(e, ei, mode){
 
 function liveStats(){
   const a = S.active; let v = 0, n = 0;
-  for (const e of a.ex) for (const s of e.sets) if (s.done){ n++; v += setVol(s, EX(e.id).type); }
+  const bw = bwAt(Date.now());
+  for (const e of a.ex) for (const s of e.sets) if (s.done){ n++; if (s.t !== 'w') v += setVol(s, EX(e.id), bw); }
   return {v, n};
 }
 VIEWS.workout = () => {
@@ -770,7 +813,7 @@ VIEWS.ex = t => {
   t.met = t.met || mets[0];
   const sess = sorted().filter(w => w.ex.some(e => e.id === x.id)).map(w => ({w, e:w.ex.find(e => e.id === x.id)}));
   const b = bests(x.id);
-  const series = sess.slice().reverse().map(({w,e}) => ({t:w.start, v:Math.max(0, ...e.sets.map(s => MET[t.met].f(s, x.type)))})).filter(p => p.v > 0);
+  const series = sess.slice().reverse().map(({w,e}) => ({t:w.start, v:Math.max(0, ...e.sets.filter(s => s.t !== 'w').map(s => MET[t.met].f(s, x, bwAt(w.start))))})).filter(p => p.v > 0);
   const toDisp = v => ['w','e1'].includes(t.met) ? toU(v) : t.met === 'sv' ? toU(v) : t.met === 'secs' ? v/60 : v;
   const res = `
     <div class="card p">
@@ -782,8 +825,8 @@ VIEWS.ex = t => {
     <div class="sec"><span class="lbl">Récords personales</span></div>
     <div class="pad"><div class="recs">${mets.map(k => `<div><div class="lbl">${MET[k].lbl}</div><div style="font-weight:650;margin-top:3px">${b[k] ? MET[k].fmt(b[k]) : '—'}</div></div>`).join('')}
       <div><div class="lbl">Sesiones</div><div style="font-weight:650;margin-top:3px">${sess.length}</div></div></div></div>
-    ${x.type === 'wr' && b.e1 ? `<div class="sec"><span class="lbl">Tabla de repeticiones máximas</span></div><div class="card p">${[1,2,3,5,8,10,12].map(r => `<div class="kv"><span>${r} ${r===1?'rep':'reps'}</span><span class="num">${nf(Math.round(toU(r===1?b.e1:b.e1/(1+r/30))*2)/2)} ${u()}</span></div>`).join('')}</div>` : ''}
-    <div class="pad mut" style="font-size:12px;padding-top:12px">1RM estimado con la fórmula de Epley: peso × (1 + reps / 30).</div>`;
+    ${x.type === 'wr' && b.e1 ? `<div class="sec"><span class="lbl">Tabla de repeticiones máximas</span></div><div class="card p">${[1,2,3,5,8,10,12].map(r => `<div class="kv"><span>${r} ${r===1?'rep':'reps'}</span><span class="num">${nf(Math.round(toU(b.e1*PCT[r])*2)/2)} ${u()}</span></div>`).join('')}</div>` : ''}
+    <div class="pad mut" style="font-size:12px;padding-top:12px">1RM estimado con tabla porcentual: 5 reps ≈ 89 %, 10 reps ≈ 75 % del máximo. Los calentamientos no cuentan como récord.</div>`;
   const hist = sess.map(({w,e}) => `<div class="hist"><button style="text-align:left" data-a="go" data-v="wv" data-id="${w.id}"><div style="font-weight:620">${esc(w.title)}</div><div class="mut" style="font-size:12.5px">${when(w.start)}</div></button>
      <div style="margin-top:6px">${e.sets.map((s,i) => `<div class="s"><span class="k ${SETT[s.t][2]}">${setLabel(e.sets,i)}</span><span>${esc(setTextR(s,x.type))}</span></div>`).join('')}</div></div>`).join('');
   return {
@@ -865,6 +908,8 @@ VIEWS.cfg = () => ({
     <div class="sec"><span class="lbl">Entreno</span></div>
     <div class="card" style="padding:0 14px">
       <button class="opt" data-a="restDefault"><span style="flex:1">Descanso por defecto</span><span class="mut">${restLbl(S.rest)}</span></button>
+      <button class="opt" data-a="prevMode"><span style="flex:1">Columna «Anterior»</span><span class="mut">${S.prevMode === 'routine' ? 'Misma rutina' : 'Cualquier entreno'}</span></button>
+      <button class="opt" data-a="dbl"><span style="flex:1">Contar doble el peso en mancuernas</span><span class="mut">${S.dbl ? 'Sí' : 'No'}</span></button>
       <button class="opt" data-a="sound"><span style="flex:1">Sonido y vibración al terminar el descanso</span><span class="mut">${S.sound ? 'Sí' : 'No'}</span></button>
     </div>
     <div class="sec"><span class="lbl">Datos</span></div>
@@ -995,10 +1040,10 @@ function markDone(ei, si, row){
   }
   s.done = true;
   // récord en vivo: contra el historial y las series previas de este mismo entreno
-  const b = bests(e.id); s.pr = 0;
-  if (Object.values(b).some(v => v > 0)){
-    for (const o of e.sets) if (o !== s && o.done) for (const k in b) b[k] = Math.max(b[k], MET[k].f(o, x.type));
-    const hit = Object.keys(b).filter(k => MET[k].f(s, x.type) > b[k]);
+  const b = bests(e.id), bw = bwAt(Date.now()); s.pr = 0;
+  if (s.t !== 'w' && Object.values(b).some(v => v > 0)){
+    for (const o of e.sets) if (o !== s && o.done && o.t !== 'w') for (const k in b) b[k] = Math.max(b[k], MET[k].f(o, x, bw));
+    const hit = Object.keys(b).filter(k => MET[k].f(s, x, bw) > b[k]);
     if (hit.length){ s.pr = 1; toast(`🏆 Récord · ${MET[hit[0]].lbl}${hit.length > 1 ? ` y ${hit.length-1} más` : ''}`, 3000); }
   }
   save(); render();
@@ -1177,7 +1222,7 @@ const A = {
     if (!kg) return toast('Escribe el peso de tu primera serie efectiva');
     const st = S.units === 'lb' ? 5/LB : 2.5, rd = v => Math.max(st, Math.round(v/st)*st);
     e.sets = e.sets.filter(s => s.t !== 'w' || s.done);
-    e.sets.unshift(...[[.4,10],[.6,5],[.8,3]].map(([p,r]) => ({...newSet('w'), kg:rd(kg*p), reps:r})));
+    e.sets.unshift(...[[.4,5],[.6,5],[.8,3]].map(([p,r]) => ({...newSet('w'), kg:rd(kg*p), reps:r})));
     save(); render(); toast('Se agregaron 3 series de calentamiento');
   },
   plates(el){
@@ -1254,6 +1299,8 @@ const A = {
     S.body.push({t:Date.now(), kg:fromU(v)}); save(); close(); render();
   },
   units(el){ S.units = el.dataset.k; save(); render(); },
+  prevMode(){ S.prevMode = S.prevMode === 'routine' ? 'any' : 'routine'; save(); render(); },
+  dbl(){ S.dbl = !S.dbl; prCache.clear(); save(); render(); },
   sound(){ S.sound = !S.sound; save(); render(); if (S.sound) beep(); },
   restDefault(){ sheet('Descanso por defecto', [0,30,45,60,75,90,120,150,180,240,300].map(s => `<button class="opt" data-a="restDefPick" data-k="${s}" aria-checked="${S.rest===s}">${restLbl(s)}</button>`).join('')); },
   restDefPick(el){ S.rest = +el.dataset.k; close(); save(); render(); },

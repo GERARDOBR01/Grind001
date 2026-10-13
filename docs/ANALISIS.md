@@ -41,6 +41,23 @@ El archivo `uptodown-com.hevy.apk` es el **instalador de la tienda Uptodown**, n
 analizar Hevy hace falta extraer el APK del teléfono (p. ej. con ML Manager) o bajarlo de APKMirror
 verificando que el desarrollador sea Hevy Studios S.L.
 
+### Segunda corrida: el APK real
+
+El APK correcto (`Hevy.apk`, 125 MB, extraído del teléfono y pasado por Drive):
+
+| Campo | Valor |
+|---|---|
+| `package_name` | **`com.hevy`** |
+| `version_name` / `version_code` | 3.1.16 / 3325935 |
+| SDK | mín. 24, objetivo 36 |
+| Clases Java/Kotlin | 28,701 (9 archivos `classes*.dex`) |
+| Lógica de la app | `assets/index.android.bundle`, 22 MB: **React Native con bytecode Hermes v96** |
+
+REA cubre la parte Android (manifiesto, clases), pero no decodifica bytecode Hermes. Para el bundle se
+usó [`hermes-dec`](https://github.com/P1sec/hermes-dec) (soporta v96): 60,302 funciones y 139,363
+cadenas; los nombres originales de las funciones se conservan, lo que hizo directo ubicar la lógica.
+**En este repo no hay código de Hevy**: solo se documenta el comportamiento y se reimplementa.
+
 ### Cómo correr REA tú mismo (opcional)
 
 Si quieres profundizar en implementación nativa, desde tu computadora con el teléfono por USB:
@@ -85,7 +102,7 @@ Lista de funciones de referencia → decisión en *Serie*:
 | Tipos de serie | Hoja al tocar el número de serie. |
 | Temporizador de descanso automático | Por ejercicio; sonido (WebAudio) y vibración. |
 | Notificación de récord en vivo | Compara contra el historial y contra las series previas del mismo entreno. |
-| Calcular 1RM | Epley `peso × (1 + reps/30)`, con las reps acotadas a 12. |
+| Calcular 1RM | Tabla porcentual por repeticiones (ver sección 4). |
 | Gráficas por ejercicio, récords, historial | Vista `ex`. |
 | Calentamiento y calculadora de discos | Menú `⋯` del ejercicio. |
 | Superseries | Menú `⋯` → “Superserie con el siguiente”. |
@@ -97,3 +114,19 @@ Lista de funciones de referencia → decisión en *Serie*:
 comentarios, reloj inteligente, videos de ejercicios, Strava, coach. **Pendientes razonables** para
 una siguiente iteración: carpetas de rutinas, fotos de
 progreso, medidas en cm, reordenar arrastrando. (RPE, rangos de reps y reemplazar ejercicio ya están.)
+
+## 4. Hallazgos del APK (comportamiento real) y qué se ajustó
+
+| Tema | Lo que hace la app de referencia | Antes en *Serie* | Ahora |
+|---|---|---|---|
+| **1RM estimado** | `peso / porcentaje[reps]` con una tabla de 1 a 30 reps (1 = 100 %, 5 = 89 %, 10 = 75 %, 30 = 50 %); más de 30 reps = 50 % | Epley | Tabla porcentual; la tabla de repeticiones máximas usa los mismos porcentajes |
+| **Volumen con peso corporal** | En ejercicios marcados como 100 % peso corporal suma tu peso: (lastre + peso) × reps; asistidos: (peso − asistencia) × reps; “solo reps” cuenta peso × reps | Solo lastre | Igual, con el peso corporal registrado más cercano antes de esa fecha |
+| **Mancuernas** | Ajuste para contar el peso ×2 en ejercicios con mancuerna de peso y reps | — | Ajuste «Contar doble el peso en mancuernas» |
+| **Calentamientos** | No suman volumen y no cuentan para récords | Sí contaban | Excluidos |
+| **Récords por tipo** | Peso y reps: peso, 1RM, mejor serie. Peso corporal: peso, mejor serie. Asistido y solo reps: reps. Duración, distancia: los suyos | Similar | Alineado; se agregan tipos *asistido* y *peso y duración* |
+| **Columna «Anterior»** | Ajuste: valores de cualquier entreno o de la misma rutina | Cualquiera | Ajuste con las dos opciones |
+| **Calculadora de calentamiento** | 40 % × 5, 60 % × 5, 80 % × 3, redondeado a discos o mancuernas | 40 % × 10 | 40 % × 5 |
+| **Duración estimada de rutina** | 45 s por serie (o la duración de la serie) + descanso del ejercicio (90 s por defecto), sin descanso tras un drop set | — | Se muestra en cada rutina |
+| **Series por músculo** | Principal = 1, secundario = 0.5 | Igual | Sin cambio |
+| **Nivel de fuerza** | Percentil ≥ 90 élite, ≥ 70 avanzado, ≥ 40 intermedio | — | No aplica: requiere datos de otros usuarios |
+| **Calculadora de discos** | Los discos disponibles vienen del servidor | Lista fija | Sin cambio |
